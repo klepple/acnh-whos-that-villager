@@ -1,23 +1,33 @@
-import logo from './logo.svg';
+import { useEffect, useState } from "react";
 import './App.css';
+import { fetchVillager } from "./api/fetchVillager.js";
+import Header from './components/Header';
+import Solution from './components/Solution';
+import VillagerCard from './components/VillagerCard';
 
 function App() {
+  const [correctVillager, setCorrectVillager] = useState(null);
+  const [roundCount, setRoundCount] = useState(0);
+
+  const incrementRound = () => setRoundCount(roundCount + 1);
+
+  useEffect(() => {
+    setCorrectVillager(fetchVillager(1));
+  }, [roundCount])
+
+
   return (
     <div className="App">
       <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
+        <Header/>
       </header>
+      <Solution/>
+      <div className="villagerContainer">
+        <VillagerCard/>
+        <VillagerCard/>
+        <VillagerCard/>
+      </div>
+      <button onClick={incrementRound}>New Round</button>
     </div>
   );
 }
