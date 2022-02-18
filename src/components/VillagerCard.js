@@ -1,10 +1,9 @@
 
-
-function VillagerCard() {
+function VillagerCard({name, picture, check}) {
     return (
         <>
-            <button>VillagerName</button>
-            <img></img>
+            <button onClick={() => {check(name)}}>{name}</button>
+            <img src={picture}/>
         </>
     );
 }
