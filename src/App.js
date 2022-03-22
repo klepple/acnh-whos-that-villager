@@ -1,78 +1,82 @@
 import { useEffect, useState } from "react";
+
 import './App.css';
 import { fetchVillager } from "./api/fetchVillager.js";
-import { randomNumber, shuffle } from "./utils.js";
+import { randomNumber } from "./utils.js";
 import Header from './components/Header';
-import VillagerOptions from './components/VillagerOptions';
 import VillagerCard from './components/VillagerCard';
 
-function App() {
-  const [correctVillager, setCorrectVillager] = useState(null);
-  const [incorrectVillager1, setIncorrectVillager1] = useState(null);
-  const [incorrectVillager2, setIncorrectVillager2] = useState(null);
-
-  const [correctKey, setCorrectKey] = useState(-1);
+function App() { 
+  const [correctKey, setCorrectKey] = useState(randomNumber(0, 3));
   const [roundCount, setRoundCount] = useState(0);
-  // const [villagers, setVillagers] = useState({});
+  const [villagers, setVillagers] = useState([]);
+
+  const numVillagersToGuess = 3;
+  const totalVillagers = 312;
 
   const incrementRound = () => {
     setRoundCount(roundCount + 1);
-    // setVillagers({});
+
+    setVillagers([]);
+    setCorrectKey(randomNumber(0, numVillagersToGuess - 1))
   }
 
-  const checkIfCorrect = (name) => {
-    if(name === correctVillager['name']['name-USen']) {
-      alert(`You got it! ${name} is the correct villager.`);
+  const checkIfCorrect = (selectedVillager) => {
+    if(selectedVillager.correct) {
+      alert(`You got it! ${selectedVillager.name} is the correct villager.`);
+      incrementRound();
     } else {
-      alert("Wrong! You're a fake Animal Crossing fan.");
+      alert(`Wrong! You're a fake Animal Crossing fan. The correct villager is ${villagers[correctKey].name}`);
     }
   }
 
+  const defineVillager = (index, villagerData) => {
+    return { 
+      'id' : index,
+      'name' : villagerData['name']['name-USen'],
+      'catchPhrase' : villagerData['catch-phrase'],
+      'picture' : villagerData['image_uri'],
+      'correct' : (correctKey === index ? true : false)
+    };
+  }
+
+  const fetchVillagers = () => {
+    // Fetch villager data
+    const promises = [];
+    for(let i = 0; i < numVillagersToGuess; i++) {
+      promises.push(fetchVillager(randomNumber(1, totalVillagers)));
+    }
+
+    // Set state once data is done fetching
+    Promise.all(promises).then(villagerData => {
+      let newVillagers = [];
+
+      for(let i = 0; i < numVillagersToGuess; i++) {
+        newVillagers.push(defineVillager(i, villagerData[i]));
+      }
+
+      setVillagers(newVillagers);
+    });
+  }
+
   useEffect(() => {
-    setCorrectKey(randomNumber(0, 2));
-
-    // for (let i = 0; i < 3; i++) { 
-    //   fetchVillager(randomNumber(1, 312)).then((villagerData) => {
-    //     if (i === correctKey){
-    //       // correct villager is not always at the same index.
-    //       setCorrectVillager(villagerData);
-    //     }
-    //     // let tempDict = {};
-    //     // tempDict[i] = villagerData;
-    //     setVillagers({...villagers, [i]: villagerData});
-    //     console.log(villagers);
-    //     console.log(i);
-    //   });
-    // }
-    fetchVillager(randomNumber(1, 312)).then((villagerData) => {
-      setCorrectVillager(villagerData);
-    });
-    fetchVillager(randomNumber(1, 312)).then((villagerData) => {
-      setIncorrectVillager1(villagerData);
-    });
-    fetchVillager(randomNumber(1, 312)).then((villagerData) => {
-      setIncorrectVillager2(villagerData);
-    });
-
+    // Actions taken on each round
+    fetchVillagers();
   }, [roundCount]);
 
   return (
     <div className="App">
       <Header/>
       <div>
-        {correctVillager ? correctVillager['catch-phrase'] : 'Loading...'}
+        {villagers.length === numVillagersToGuess ? villagers.find(villager => (villager.correct)).catchPhrase : 'Loading...'}
       </div>
       <div>
         - who says this?
       </div>
-      <div className="villagerOptions">      
-        {incorrectVillager1 ? <VillagerCard name={incorrectVillager1['name']['name-USen']} picture={incorrectVillager1['image_uri']} check={checkIfCorrect}/> : 'Loading...'}
-        {correctVillager ? <VillagerCard name={correctVillager['name']['name-USen']} picture={correctVillager['image_uri']} check={checkIfCorrect}/> : 'Loading...'}
-        {incorrectVillager2 ? <VillagerCard name={incorrectVillager2['name']['name-USen']} picture={incorrectVillager2['image_uri']} check={checkIfCorrect}/> : 'Loading...'}
-        
-        {/* {villagers[0] ? <VillagerCard name={villagers[0]['name']['name-USen']} picture={villagers[0]['image_uri']}/> : <div>Loading...</div>}
-        {villagers[1] ? <VillagerCard name={villagers[1]['name']['name-USen']} picture={villagers[1]['image_uri']}/> : <div>Loading...</div>}
-        {villagers[2] ? <VillagerCard name={villagers[2]['name']['name-USen']} picture={villagers[2]['image_uri']}/> : <div>Loading...</div>} */}
+      <div className="villagerOptions">
+        {villagers.length === numVillagersToGuess ? villagers.map(villager => (
+          <VillagerCard key={villager.id} villager={villager} check={checkIfCorrect}/>
+        )): 'Loading...'}
       </div>
       <button onClick={incrementRound}>New Round</button>
     </div>
